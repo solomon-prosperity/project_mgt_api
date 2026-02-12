@@ -1,0 +1,48 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.dev
+    command: sh -c "yarn migrate && yarn start:dev"
+    ports:
+      - '4000:3000'
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    env_file:
+      - .env
+    environment:
+      - HTTP_PORT=3000
+      - DB_TYPE=postgres
+      - DB_HOST=psql-db
+      - RABBITMQ_HOST=rabbitmq
+    depends_on:
+      - psql-db
+      - rabbitmq
+
+  psql-db:
+    image: postgres:16.0
+    restart: on-failure
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - project_mgt_api_data:/var/lib/postgresql
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - '5672:5672'
+      - '15672:15672' # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+volumes:
+  project_mgt_api_data:
+  rabbitmq_data:
