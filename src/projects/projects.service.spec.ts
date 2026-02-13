@@ -138,7 +138,7 @@ describe('ProjectsService', () => {
 
   describe('findAll', () => {
     it('should return paginated projects', async () => {
-      const pagination: PaginationDto = { limit: 10, offset: 0 };
+      const pagination: PaginationDto = { limit: 10, page: 0 };
       const mockQueryBuilder = {
         where: jest.fn().mockReturnThis(),
         select: jest.fn().mockReturnThis(),
@@ -153,8 +153,8 @@ describe('ProjectsService', () => {
 
       const result = await service.findAll('org-123', pagination);
 
-      expect(result.data).toEqual([mockProject]);
-      expect(result.meta.total).toBe(1);
+      expect(result.docs).toEqual([mockProject]);
+      expect(result.pagination.total_count).toBe(1);
     });
   });
 

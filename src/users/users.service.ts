@@ -16,7 +16,8 @@ import { CreateOrgUserDto } from './dto/create-org-user.dto';
 import { GetOrgUsersDto } from './dto/get-org-users.dto';
 import { Role } from '../roles/entities/role.entity';
 import { Organization } from '../organizations/entities/organization.entity';
-import { paginateResult } from 'src/common/helpers';
+import { paginateResult } from '../common/helpers';
+import { IUser } from '../common/utils/interfaces';
 
 @Injectable()
 export class UsersService {
@@ -99,10 +100,11 @@ export class UsersService {
       skip: (page - 1) * limit,
     });
 
-    const docs = members.map((m) => ({
-      ...m.user,
-      role: m.role,
-    }));
+    const docs = members.map((m) => {
+      const user = m.user;
+      (user as IUser).role = m.role;
+      return user;
+    });
 
     return {
       docs,
@@ -119,10 +121,9 @@ export class UsersService {
     if (!member)
       throw new NotFoundException('User not found in this organization');
 
-    return {
-      ...member.user,
-      role: member.role,
-    };
+    const user = member.user;
+    (user as IUser).role = member.role;
+    return user;
   }
 
   async findOne(query: FindOptionsWhere<User>): Promise<User | null> {

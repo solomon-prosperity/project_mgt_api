@@ -9,15 +9,12 @@ import slugify from 'slugify';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Role } from './entities/role.entity';
-// import { Admin } from 'typeorm';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { IUpdatePayload } from './interfaces/roles.interfaces';
-// import { generateRandomString } from '../common/helpers';
 import { PermissionsService } from '../permissions/permissions.service';
 import { paginateResult } from '../common/helpers';
 import { FindManyInterface } from 'src/common/utils/interfaces';
-// import { GetRoleUsersDto } from './dto/get-role-users.dto';
 import { GetRolesDto } from './dto/get-roles.dto';
 
 @Injectable()
@@ -25,8 +22,6 @@ export class RolesService {
   constructor(
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
-    // @InjectRepository(Admin)
-    // private readonly adminRepository: Repository<Admin>,
     private dataSource: DataSource,
     private permissionsService: PermissionsService,
   ) {}

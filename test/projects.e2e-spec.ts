@@ -132,7 +132,7 @@ describe('Projects (e2e)', () => {
         .set('Authorization', `Bearer ${accessTokenOrgA}`)
         .expect(200);
 
-      expect(response.body.response.data.length).toBeGreaterThan(0);
+      expect(response.body.response.docs.length).toBeGreaterThan(0);
     });
 
     it('should NOT see Org A projects when logged into Org B (Isolation)', async () => {
@@ -141,7 +141,7 @@ describe('Projects (e2e)', () => {
         .set('Authorization', `Bearer ${accessTokenOrgB}`)
         .expect(200);
 
-      const orgAProjectInB = response.body.response.data.find(
+      const orgAProjectInB = response.body.response.docs.find(
         (p: { project_id: string }) => p.project_id === projectAId,
       );
       expect(orgAProjectInB).toBeUndefined();

@@ -13,6 +13,7 @@ import { PaginationDto } from './dto/pagination.dto';
 import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
 import { Request } from 'express';
 import { IUser } from 'src/common/utils/interfaces';
+import { paginateResult } from '../common/helpers';
 
 @Injectable()
 export class ProjectsService {
@@ -86,9 +87,9 @@ export class ProjectsService {
     }
   }
 
-  async findAll(org_id: string, pagination: PaginationDto) {
-    const { limit = 20, offset = 0 } = pagination;
-
+  async findAll(org_id: string, pagination_data: PaginationDto) {
+    const { limit = 20, page = 1 } = pagination_data;
+    const skip = (page - 1) * limit;
     const [projects, total] = await this.projectRepository
       .createQueryBuilder('project')
       .where('project.org_id = :org_id', { org_id })
@@ -99,17 +100,11 @@ export class ProjectsService {
         'project.created_at',
       ])
       .take(limit)
-      .skip(offset)
+      .skip(skip)
       .getManyAndCount();
 
-    return {
-      data: projects,
-      meta: {
-        total,
-        limit,
-        offset,
-      },
-    };
+    const pagination = paginateResult(total, page, limit);
+    return { docs: projects, pagination };
   }
 
   async findOne(project_id: string, org_id: string) {

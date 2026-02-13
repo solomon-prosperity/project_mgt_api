@@ -65,7 +65,7 @@ describe('ProjectsController', () => {
 
   describe('findAll', () => {
     it('should call service.findAll with correct parameters', async () => {
-      const pagination: PaginationDto = { limit: 10, offset: 0 };
+      const pagination: PaginationDto = { limit: 10, page: 0 };
       mockProjectsService.findAll.mockResolvedValue({ data: [], meta: {} });
 
       const result = await controller.findAll(pagination, mockUser);
