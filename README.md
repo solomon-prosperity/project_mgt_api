@@ -111,28 +111,74 @@ SELECT
     COALESCE(SUM(i.total_amount), 0) AS total_invoiced_amount,
     COUNT(i.id) AS invoice_count
 FROM clients c
-LEFT JOIN invoices i ON c.id = i.client_id
+LEFT JOIN invoices i
+    ON c.id = i.client_id
     AND i.org_id = c.org_id
     AND i.status = 'Paid'
-    AND i.created_at BETWEEN '2026-01-01' AND '2026-01-31'
-WHERE c.org_id = :org_id
-GROUP BY c.id, c.full_name;
+    AND i.created_at >= $2
+    AND i.created_at <  $3
+WHERE c.org_id = $1
+GROUP BY c.id, c.full_name
+ORDER BY c.full_name;
 ```
 
 ### Indexing Recommendations
 
-To optimize this query for performance and tenant isolation, I would add the following indexes:
+To optimize this query for performance while maintaining strong tenant isolation, I would add the following indexes:
 
-1. **Composite Index on `invoices(org_id, status, created_at)`**:
-   - **Why**: This index allows the database to instantly filter records for a specific tenant and a specific status ('Paid') while also performing an efficient range scan on the `created_at` column.
-2. **Foreign Key Index on `clients(org_id)`**:
-   - **Why**: Essential for the initial filtering of clients belonging to the specified organization and for joining with the organizations table if necessary.
-3. **Index on `invoices(client_id)`**:
-   - **Why**: Speeds up the join operation between the `clients` and `invoices` tables.
-4. **Composite Index on `invoices(client_id, org_id)`**:
-   - **Why**: (Optional but recommended) Ensures that the join integrity (matching both client and organization) is highly performant and can potentially allow for index-only scans if other columns are included.
+---
 
-**Rationale**: Leading with `org_id` in most indexes ensures that the database engine can isolate the relevant data subset (the tenant's data) immediately, minimizing Disk I/O and CPU usage.
+#### 1. Composite Index on `invoices(org_id, status, created_at)`
+
+```sql
+CREATE INDEX idx_invoices_org_status_created
+ON invoices (org_id, status, created_at);
+```
+
+**Why:**
+
+- The query filters by `org_id`
+- Filters by `status = 'Paid'`
+- Performs a range scan on `created_at`
+- Placing `org_id` first ensures immediate tenant isolation
+- This supports efficient index range scans per tenant and avoids full table scans
+
+---
+
+#### 2. Index on `invoices(client_id)`
+
+```sql
+CREATE INDEX idx_invoices_client_id
+ON invoices (client_id);
+```
+
+**Why:**
+
+- Speeds up the join between `clients` and `invoices`
+- Prevents sequential scans during aggregation
+- Improves join performance when grouping invoices by client
+
+---
+
+#### 3. Index on `clients(org_id)`
+
+```sql
+CREATE INDEX idx_clients_org_id
+ON clients (org_id);
+```
+
+**Why:**
+
+- Ensures efficient filtering of clients belonging to a specific tenant
+- Avoids scanning all clients across all organizations
+- Maintains consistent tenant isolation performance
+
+### Rationale
+
+Leading with `org_id` in composite indexes ensures the database engine can immediately isolate tenant data before applying additional filters. This minimizes disk I/O and improves query efficiency in multi-tenant systems.
+
+Indexes should be based on observed query patterns and execution plans rather than added preemptively, as excessive indexing increases write cost and storage overhead.
+
 
 ---
 
